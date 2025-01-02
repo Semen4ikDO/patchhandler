@@ -1,25 +1,87 @@
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
+package main
 
-# Test binary, built with `go test -c`
-*.test
+import (
+	"github.com/labstack/echo/v4"
+	"net/http"
+	"strconv"
+)
 
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
+type Messege struct {
+	ID   int    `json:"ID"`
+	Text string `json:"text"`
+}
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+type Responce struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+}
 
-# Go workspace file
-go.work
-go.work.sum
+var messages []Messege
+var nextID = 1
 
-# env file
-.env
+func GetHAndler(c echo.Context) error {
+
+	return c.JSON(http.StatusOK, &messages)
+}
+
+func PostHandler(c echo.Context) error {
+	var message Messege
+	if err := c.Bind(&message); err != nil {
+		return c.JSON(http.StatusBadRequest, Responce{
+			Status:  "Error",
+			Message: "Сообщение не добавлено",
+		})
+	}
+	message.ID = nextID
+	nextID++
+
+	messages = append(messages, message)
+	return c.JSON(http.StatusOK, Responce{
+		Status:  "Succeed",
+		Message: "Добавлено",
+	})
+}
+func PatchHandler(c echo.Context) error {
+ idParam := c.Param(name:"id")
+ id, err := strconv.Atoi(idParam)
+ if err != nil {
+	 return c.JSON(http.StatusBadRequest, Responce{
+		 Status:  "Error",
+		 Message: "bad id",
+	 })
+ }
+var updatedMessage Messege
+	if err := c.Bind(&updatedMessage); err != nil {
+		return c.JSON(http.StatusBadRequest, Responce{
+			Status:  "Error",
+			Message: "не обновлено",
+
+ updated := false
+for i, massage := range message {
+if message.ID == id{
+			updatedMessage.ID = id
+			message[i] = updatedMessage
+			updated = true
+			break
+		}
+}
+if !updated { return c.JSON(http.StatusBadRequest, Responce{
+			Status:  "Error",
+			Message: "сообщение не найдено",
+		})
+}
+		{ return c.JSON(http.StatusOK, Responce{
+			Status:  "Error",
+			Message: "сообщение обновлено",
+		})
+
+		}
+}
+func main() {
+	e := echo.New()
+
+	e.GET("/messages", GetHAndler)
+	e.POST("/messages", PostHandler)
+    e.PATCH("/messages/:id", PatchHandler())
+	e.Start(":8080")
+}
